@@ -1,0 +1,22 @@
+#!/bin/bash
+
+PROJECT="/home/node/$(basename $3)"
+
+case $1 in
+    claude)
+        cmd="claude"
+        ;;
+    codex)
+        cmd="codex"
+        ;;
+    gemini)
+        cmd="gemini"
+        ;;
+    *)
+        echo "Usage $0 {claude|codex|gemini} {project_dir}"
+        exit 127
+        ;;
+esac
+
+# 1455 is for codex
+docker run -v $(realpath $2):/home/node -v $(realpath $3):${PROJECT} -p 127.0.0.1:1455:1455 --rm -it tb0hdan/agentic-sandbox bash -l -c "su node bash -l -c \"cd ${PROJECT}; ${cmd}\""
