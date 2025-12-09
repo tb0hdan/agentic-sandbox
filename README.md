@@ -106,14 +106,14 @@ For consistent behavior, `AGENTS.md` and `GEMINI.md` redirect to `CLAUDE.md` by 
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              Docker Container                    │
+│              Docker Container                   │
 │  ┌─────────────────────────────────────────┐    │
 │  │  Node.js 25 + AI CLI Tools              │    │
 │  │  - @anthropic-ai/claude-code            │    │
 │  │  - @openai/codex                        │    │
 │  │  - @google/gemini-cli                   │    │
 │  └─────────────────────────────────────────┘    │
-│                     │                            │
+│                     │                           │
 │     ┌───────────────┴───────────────┐           │
 │     ▼                               ▼           │
 │  /home/node                  /home/node/project │
