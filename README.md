@@ -19,6 +19,12 @@ A Docker-based sandbox environment for running AI coding assistants in isolation
 
 ## Quick start
 
+Build an image (only needed on first run):
+
+```bash
+make build
+```
+
 For Claude Code (default):
 ```bash
 make compose
@@ -38,6 +44,12 @@ then
 
 ```bash
 bin/agent-docker
+```
+
+When you're done, stop the container with:
+
+```bash
+make compose-down
 ```
 
 For more information see the [Advanced Usage](docs/ADVANCED.md) guide.
