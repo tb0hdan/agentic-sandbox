@@ -1,0 +1,112 @@
+#!/bin/bash
+
+set -e
+
+PROVISIONED_MARKER="/home/node/.mcp_provisioned"
+
+# Get the agent container ID from docker compose
+CONTAINER_ID=$(docker compose -f deployments/docker-compose.yml ps -q agent 2>/dev/null)
+
+if [ -z "$CONTAINER_ID" ]; then
+    echo "Error: Agent container not found. Make sure docker compose is running:"
+    echo "  cd deployments && docker compose up -d"
+    exit 1
+fi
+
+# Check if container is running
+if ! docker ps -q --no-trunc | grep -q "$CONTAINER_ID"; then
+    echo "Error: Agent container is not running."
+    exit 1
+fi
+
+# Get AGENT_TYPE from container environment
+AGENT_TYPE=$(docker exec "$CONTAINER_ID" printenv AGENT_TYPE 2>/dev/null || echo "claude")
+
+case "$AGENT_TYPE" in
+    claude)
+        cmd="claude"
+        ;;
+    codex)
+        cmd="codex"
+        ;;
+    gemini)
+        cmd="gemini"
+        ;;
+    *)
+        echo "Error: Invalid AGENT_TYPE '$AGENT_TYPE'. Use: claude, codex, or gemini"
+        exit 1
+        ;;
+esac
+
+echo "Attaching to agent container (AGENT_TYPE=$AGENT_TYPE)..."
+
+# Fix ownership of home directory for node user
+docker exec "$CONTAINER_ID" chown -R node:node /home/node
+
+# Check if MCP servers are already provisioned
+if docker exec "$CONTAINER_ID" test -f "$PROVISIONED_MARKER" 2>/dev/null; then
+    echo "MCP servers already provisioned."
+else
+    echo "Provisioning MCP servers for $AGENT_TYPE..."
+
+    case "$AGENT_TYPE" in
+        claude)
+            # Claude Code uses .mcp.json for project-level MCP config
+            docker exec "$CONTAINER_ID" bash -c 'cat > /home/node/project/.mcp.json << EOF
+{
+  "mcpServers": {
+    "remote-debugger": {
+      "type": "http",
+      "url": "http://remote-debugger-mcp:8899/mcp"
+    },
+    "wass": {
+      "type": "http",
+      "url": "http://wass-mcp:8989/mcp"
+    }
+  }
+}
+EOF'
+            ;;
+        codex)
+            # Codex uses mcp.json in project directory
+            docker exec "$CONTAINER_ID" bash -c 'cat > /home/node/project/mcp.json << EOF
+{
+  "mcpServers": {
+    "remote-debugger": {
+      "type": "http",
+      "url": "http://remote-debugger-mcp:8899/mcp"
+    },
+    "wass": {
+      "type": "http",
+      "url": "http://wass-mcp:8989/mcp"
+    }
+  }
+}
+EOF'
+            ;;
+        gemini)
+            # Gemini CLI uses settings.json with mcpServers
+            docker exec "$CONTAINER_ID" bash -c 'cat > /home/node/.gemini/settings.json << EOF
+{
+  "mcpServers": {
+    "remote-debugger": {
+      "type": "http",
+      "url": "http://remote-debugger-mcp:8899/mcp"
+    },
+    "wass": {
+      "type": "http",
+      "url": "http://wass-mcp:8989/mcp"
+    }
+  }
+}
+EOF'
+            ;;
+    esac
+
+    # Create marker file to indicate provisioning is complete
+    docker exec "$CONTAINER_ID" touch "$PROVISIONED_MARKER"
+    docker exec "$CONTAINER_ID" chown -R node:node /home/node
+    echo "MCP servers provisioned successfully."
+fi
+
+docker exec -it "$CONTAINER_ID" su node bash -l -c "cd /home/node/project; $cmd"

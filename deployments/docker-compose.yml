@@ -1,0 +1,47 @@
+services:
+  # MCP Services
+  remote-debugger-mcp:
+    image: tb0hdan/remote-debugger-mcp:latest
+    restart: unless-stopped
+    command: ["--bind", "0.0.0.0:8899"]
+    networks:
+      - agent-network
+
+  wass-mcp:
+    image: tb0hdan/wass-mcp:latest
+    restart: unless-stopped
+    command: ["--db", "/data/wass.db", "--bind", "0.0.0.0:8989"]
+    volumes:
+      - wass-data:/data
+    networks:
+      - agent-network
+
+  # Coding Agent - selected via AGENT_TYPE environment variable
+  # Valid values: claude, codex, gemini
+  # Container runs with noop entrypoint; use bin/agent-docker to attach
+  agent:
+    image: tb0hdan/agentic-sandbox:latest
+    stdin_open: true
+    tty: true
+    environment:
+      - AGENT_TYPE=${AGENT_TYPE:-claude}
+      - MCP_REMOTE_DEBUGGER_HOST=remote-debugger-mcp
+      - MCP_WASS_HOST=wass-mcp
+    volumes:
+      - ${HOME_DIR:-../build/home}:/home/node
+      - ${PROJECT_DIR:-../build/home/project}:/home/node/project
+    ports:
+      - "127.0.0.1:1455:1455"
+    depends_on:
+      - remote-debugger-mcp
+      - wass-mcp
+    networks:
+      - agent-network
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+networks:
+  agent-network:
+    driver: bridge
+
+volumes:
+  wass-data:

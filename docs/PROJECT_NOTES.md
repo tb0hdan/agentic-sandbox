@@ -15,11 +15,13 @@ The project enables developers to experiment with and compare different AI codin
 ```
 agentic-sandbox/
 ├── bin/
-│   └── agent              # Entrypoint script for launching agents
+│   ├── agent              # Entrypoint script for launching agents
+│   └── agent-docker       # Attach to running docker compose agent container
 ├── build/
 │   └── home/              # Mounted as /home/node in container (runtime data)
 ├── deployments/
-│   └── Dockerfile         # Container image definition
+│   ├── Dockerfile         # Container image definition
+│   └── docker-compose.yml # Multi-container orchestration with MCP services
 ├── docs/
 │   └── PROJECT_NOTES.md   # This file
 ├── AGENTS.md              # Codex agent instructions (redirects to CLAUDE.md)
@@ -83,6 +85,44 @@ Default directories:
 - `HOME_DIR`: `build/home`
 - `PROJECT_DIR`: `build/home/project`
 
+### Docker Compose (with MCP Services)
+
+Run with Docker Compose to include MCP services (remote-debugger-mcp and wass-mcp):
+
+```bash
+# Start containers in background
+cd deployments && docker compose up -d
+
+# Or with specific agent type
+AGENT_TYPE=codex docker compose up -d
+AGENT_TYPE=gemini docker compose up -d
+
+# Attach to the agent container
+cd .. && bin/agent-docker
+
+# Stop containers
+cd deployments && docker compose down
+```
+
+Environment variables:
+- `AGENT_TYPE`: Select agent (`claude`, `codex`, or `gemini`). Default: `claude`
+- `HOME_DIR`: Path to home directory. Default: `./home`
+- `PROJECT_DIR`: Path to project directory. Default: `./home/project`
+
+MCP services included:
+- `tb0hdan/remote-debugger-mcp` - Remote debugging capabilities
+- `tb0hdan/wass-mcp` - WASS MCP service
+
+MCP provisioning:
+- The `bin/agent-docker` script automatically provisions MCP servers on first run
+- A marker file (`/home/node/.mcp_provisioned`) prevents re-provisioning on subsequent runs
+- To re-provision, delete the marker file: `docker exec <container_id> rm /home/node/.mcp_provisioned`
+
+MCP configuration locations by agent:
+- **Claude**: `/home/node/project/.mcp.json`
+- **Codex**: `/home/node/project/mcp.json`
+- **Gemini**: `/home/node/.gemini/settings.json`
+
 ## Configuration Files
 
 ### AI Agent Instructions
@@ -103,6 +143,7 @@ This unified approach ensures consistent behavior across all AI assistants.
 - [x] Volume mount configuration for persistent state
 - [x] Instruction files for all three AI tools
 - [x] BSD 3-Clause license
+- [x] Docker Compose with MCP services (remote-debugger-mcp, wass-mcp)
 
 ### Future Considerations
 - [ ] Add health checks to Dockerfile

@@ -19,3 +19,6 @@ codex: dirs
 
 gemini: dirs
 	@bin/agent gemini $(HOME_DIR) $(PROJECT_DIR)
+
+compose: dirs
+	@docker compose -f deployments/docker-compose.yml up

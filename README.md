@@ -17,7 +17,31 @@ A Docker-based sandbox environment for running AI coding assistants in isolation
   - [OpenAI API key](https://platform.openai.com/api-keys) for Codex
   - [Google AI API key](https://aistudio.google.com/apikey) for Gemini CLI
 
-## Quick Start
+## Quick start
+
+For Claude Code (default):
+```bash
+make compose
+```
+
+For Gemini CLI:
+```bash
+AGENT_TYPE=gemini make compose
+``` 
+
+For OpenAI Codex:
+```bash
+AGENT_TYPE=codex make compose
+```
+
+then
+
+```bash
+bin/agent-docker
+```
+
+
+## Advanced
 
 ### 1. Build the container
 
