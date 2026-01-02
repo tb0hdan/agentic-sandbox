@@ -8,6 +8,7 @@
 - Build: `make build`
 
 ## Important Files
+- docs/ADVANCED.md - Contains advanced usage instructions and configuration details
 - docs/PROJECT_NOTES.md - Contains project overview, goals, and current implementation status
 - Makefile - Contains build, test, and lint commands
-- README.md - Contains basic project iinformation.
+- README.md - Contains basic project information.
